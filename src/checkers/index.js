@@ -10,8 +10,11 @@ import { checkImageQuality } from './imageChecker';
 import { checkStructuredData } from './structuredDataChecker';
 import { checkSecurity } from './securityChecker';
 import { checkMicroDetails } from './microChecker';
+import { checkDesignQuality } from './designChecker';
+import { checkCopywritingQuality } from './copywritingChecker';
+import { checkUserExperience } from './uxChecker';
 
-// List of all checkers with their display info - 9 comprehensive checks
+// List of all checkers with their display info - 12 comprehensive checks
 const checkers = [
     { name: 'Required Policies', fn: checkPolicies },
     { name: 'Product Pages', fn: checkProductPages },
@@ -21,11 +24,15 @@ const checkers = [
     { name: 'Image Quality', fn: checkImageQuality },
     { name: 'Structured Data', fn: checkStructuredData },
     { name: 'Security', fn: checkSecurity },
-    { name: 'Micro Details', fn: checkMicroDetails }
+    { name: 'Micro Details', fn: checkMicroDetails },
+    { name: 'Design Quality', fn: checkDesignQuality },
+    { name: 'Copywriting', fn: checkCopywritingQuality },
+    { name: 'User Experience', fn: checkUserExperience }
 ];
 
 export async function runAllCheckers(crawlResults, onProgress) {
     const results = [];
+    const categoryScores = {};
 
     for (let i = 0; i < checkers.length; i++) {
         const checker = checkers[i];
@@ -39,6 +46,11 @@ export async function runAllCheckers(crawlResults, onProgress) {
             // Run the checker
             const result = checker.fn(crawlResults);
             results.push(result);
+
+            // Store category scores for Design, Copywriting, UX
+            if (result.score !== undefined) {
+                categoryScores[checker.name] = result.score;
+            }
         } catch (error) {
             console.error(`Error in ${checker.name}:`, error);
             results.push({
@@ -61,6 +73,9 @@ export async function runAllCheckers(crawlResults, onProgress) {
         onProgress('Complete', 100);
     }
 
+    // Add category scores to results
+    results.categoryScores = categoryScores;
+
     return results;
 }
 
@@ -73,5 +88,8 @@ export {
     checkImageQuality,
     checkStructuredData,
     checkSecurity,
-    checkMicroDetails
+    checkMicroDetails,
+    checkDesignQuality,
+    checkCopywritingQuality,
+    checkUserExperience
 };
