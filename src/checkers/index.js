@@ -1,32 +1,38 @@
-// ShopScore Checkers Index
-// Unified 5-category Shopify QA audit system
+// ShopScore v2.0 Checkers Index
+// 6-category Shopify QA audit with GMC Compliance
 
-import { runShopScoreAudit, checkEssentialPages, checkNavigation, checkContentQuality, checkVisualDesign, checkTechnicalMarkers } from './shopScoreChecker';
+import { checkEssentialPages, checkNavigation, checkContentQuality, checkVisualDesign, checkTechnicalMarkers } from './shopScoreChecker';
+import { checkGMCCompliance } from './gmcChecker';
 
-// List of all ShopScore categories
+// List of all ShopScore categories (v2.0 - 100 points)
 const shopScoreCategories = [
-    { name: 'Essential Pages & Policies', fn: checkEssentialPages, maxPoints: 25 },
-    { name: 'Navigation & Structure', fn: checkNavigation, maxPoints: 20 },
-    { name: 'Content Quality', fn: checkContentQuality, maxPoints: 20 },
-    { name: 'Visual & Design', fn: checkVisualDesign, maxPoints: 20 },
-    { name: 'Technical Markers', fn: checkTechnicalMarkers, maxPoints: 15 }
+    { name: 'Essential Pages & Policies', fn: checkEssentialPages, maxPoints: 20 },
+    { name: 'Navigation & Structure', fn: checkNavigation, maxPoints: 15 },
+    { name: 'Content Quality', fn: checkContentQuality, maxPoints: 15 },
+    { name: 'Visual & Design', fn: checkVisualDesign, maxPoints: 15 },
+    { name: 'Technical Markers', fn: checkTechnicalMarkers, maxPoints: 10 },
+    { name: 'GMC Compliance', fn: checkGMCCompliance, maxPoints: 25 }
 ];
 
 export async function runAllCheckers(crawlResults, onProgress) {
     const results = [];
+    let gmcResult = null;
 
     for (let i = 0; i < shopScoreCategories.length; i++) {
         const category = shopScoreCategories[i];
 
-        // Report progress
         if (onProgress) {
             onProgress(category.name, (i / shopScoreCategories.length) * 100);
         }
 
         try {
-            // Run the category check
             const result = category.fn(crawlResults);
             results.push(result);
+
+            // Track GMC result separately for status
+            if (category.name === 'GMC Compliance') {
+                gmcResult = result;
+            }
         } catch (error) {
             console.error(`Error in ${category.name}:`, error);
             results.push({
@@ -41,19 +47,17 @@ export async function runAllCheckers(crawlResults, onProgress) {
             });
         }
 
-        // Small delay for UI feedback
         await new Promise(resolve => setTimeout(resolve, 150));
     }
 
-    // Final progress report
     if (onProgress) {
         onProgress('Complete', 100);
     }
 
-    // Calculate overall score and status
+    // Calculate overall score
     const totalScore = results.reduce((sum, cat) => sum + (cat.score || 0), 0);
 
-    // Determine status
+    // Determine overall status
     let status, statusColor;
     if (totalScore >= 90) {
         status = 'Ready for Delivery';
@@ -89,6 +93,11 @@ export async function runAllCheckers(crawlResults, onProgress) {
         maxScore: 100,
         status,
         statusColor,
+        // GMC specific status
+        gmcStatus: gmcResult?.gmcStatus || 'UNKNOWN',
+        gmcStatusColor: gmcResult?.gmcStatusColor || 'warning',
+        gmcSubcategories: gmcResult?.subcategories || null,
+        // Issue counts
         criticalCount: allIssues.filter(i => i.impact === 'critical').length,
         highCount: allIssues.filter(i => i.impact === 'high').length,
         mediumCount: allIssues.filter(i => i.impact === 'medium').length,
@@ -100,10 +109,10 @@ export async function runAllCheckers(crawlResults, onProgress) {
 }
 
 export {
-    runShopScoreAudit,
     checkEssentialPages,
     checkNavigation,
     checkContentQuality,
     checkVisualDesign,
-    checkTechnicalMarkers
+    checkTechnicalMarkers,
+    checkGMCCompliance
 };

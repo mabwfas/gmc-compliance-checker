@@ -11,6 +11,10 @@ function ResultsDashboard({ results }) {
     const totalScore = shopScoreData.totalScore || results.score || 0;
     const { status, statusColor, criticalCount, highCount, mediumCount, lowCount, allIssues } = shopScoreData;
 
+    // GMC specific status
+    const gmcStatus = shopScoreData.gmcStatus || 'UNKNOWN';
+    const gmcStatusColor = shopScoreData.gmcStatusColor || 'warning';
+
     // Get categories from results (array of category objects)
     const categories = Array.isArray(results) ? results : results.categories || [];
 
@@ -66,6 +70,14 @@ function ResultsDashboard({ results }) {
 
     const scoreInfo = getScoreInterpretation(totalScore);
 
+    // Get GMC badge info
+    const getGMCBadge = () => {
+        if (gmcStatus === 'GMC READY') return { icon: '🟢', text: 'GMC READY', className: 'gmc-ready' };
+        if (gmcStatus === 'GMC NEEDS WORK') return { icon: '🟡', text: 'GMC NEEDS WORK', className: 'gmc-warning' };
+        return { icon: '🔴', text: 'GMC NOT READY', className: 'gmc-not-ready' };
+    };
+    const gmcBadge = getGMCBadge();
+
     // Get impact badge color
     const getImpactColor = (impact) => {
         switch (impact) {
@@ -97,11 +109,16 @@ function ResultsDashboard({ results }) {
                         </div>
                     </div>
                     <div className="score-info">
-                        <h1>ShopScore Audit Report</h1>
+                        <h1>ShopScore v2.0 Audit Report</h1>
                         <p className={`score-status ${getStatusClass(totalScore)}`}>
                             {scoreInfo.icon} {scoreInfo.label}
                         </p>
                         <p className="score-desc">{scoreInfo.desc}</p>
+                        {/* GMC Status Badge */}
+                        <div className={`gmc-status-badge ${gmcBadge.className}`}>
+                            <span className="gmc-icon">{gmcBadge.icon}</span>
+                            <span className="gmc-text">{gmcBadge.text}</span>
+                        </div>
                         <div className="scan-meta">
                             {results.platform && (
                                 <span className="meta-chip platform" style={{ background: results.platform.color }}>

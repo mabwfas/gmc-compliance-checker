@@ -1,12 +1,13 @@
 /**
- * ShopScore - Unified Shopify QA Audit Checker
+ * ShopScore v2.0 - Unified Shopify QA Audit Checker
  * 
- * 5 Categories totaling 100 points:
- * - Essential Pages & Policies: 25 pts
- * - Navigation & Structure: 20 pts
- * - Content Quality: 20 pts
- * - Visual & Design: 20 pts
- * - Technical Markers: 15 pts
+ * 6 Categories totaling 100 points:
+ * - Essential Pages & Policies: 20 pts
+ * - Navigation & Structure: 15 pts
+ * - Content Quality: 15 pts
+ * - Visual & Design: 15 pts
+ * - Technical Markers: 10 pts
+ * - GMC Compliance: 25 pts (see gmcChecker.js)
  */
 
 // Helper to create a suggestion with specific format
@@ -34,21 +35,21 @@ function getWhyItMatters(title, impact) {
 }
 
 // ============================================
-// CATEGORY 1: Essential Pages & Policies (25 pts)
+// CATEGORY 1: Essential Pages & Policies (20 pts)
 // ============================================
 function checkEssentialPages(crawlResults) {
     const issues = [];
-    let score = 25;
+    let score = 20;
     const { pages } = crawlResults;
     const allHtml = pages.map(p => p.html || '').join(' ').toLowerCase();
 
-    // Privacy Policy (4 pts)
+    // Privacy Policy (3 pts)
     const privacyPage = pages.find(p =>
         p.url?.includes('privacy') ||
         p.url?.includes('policies/privacy')
     );
     if (!privacyPage) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Privacy Policy Page Missing',
             'No privacy policy page was found on the store.',
@@ -176,13 +177,13 @@ function checkEssentialPages(crawlResults) {
         issues.push({ title: 'Terms of Service Present', severity: 'pass', description: 'Terms of service page exists' });
     }
 
-    // Contact Us Page (5 pts)
+    // Contact Us Page (4 pts)
     const contactPage = pages.find(p =>
         p.url?.includes('contact') ||
         p.url?.includes('pages/contact')
     );
     if (!contactPage) {
-        score -= 5;
+        score -= 4;
         issues.push(createSuggestion(
             'Contact Page Missing',
             'No contact page was found on the store.',
@@ -224,14 +225,14 @@ function checkEssentialPages(crawlResults) {
         }
     }
 
-    // Track Order Page (4 pts)
+    // Track Order Page (2 pts)
     const trackPage = pages.find(p =>
         p.url?.includes('track') ||
         p.url?.includes('order-tracking') ||
         p.url?.includes('apps/track')
     );
     if (!trackPage) {
-        score -= 4;
+        score -= 2;
         issues.push(createSuggestion(
             'Track Order Page Missing',
             'No order tracking page was found. This is commonly missing.',
@@ -259,18 +260,18 @@ function checkEssentialPages(crawlResults) {
 
     return {
         name: 'Essential Pages & Policies',
-        maxPoints: 25,
+        maxPoints: 20,
         score: Math.max(0, score),
         issues
     };
 }
 
 // ============================================
-// CATEGORY 2: Navigation & Structure (20 pts)
+// CATEGORY 2: Navigation & Structure (15 pts)
 // ============================================
 function checkNavigation(crawlResults) {
     const issues = [];
-    let score = 20;
+    let score = 15;
     const { pages } = crawlResults;
     const homepage = pages[0];
     const html = homepage?.html || '';
@@ -346,11 +347,11 @@ function checkNavigation(crawlResults) {
         issues.push({ title: 'Footer Structure Complete', severity: 'pass', description: 'Footer has proper structure' });
     }
 
-    // Mobile Menu (4 pts)
+    // Mobile Menu (3 pts)
     const hasMobileMenu = /hamburger|mobile-menu|nav-toggle|menu-toggle|burger/i.test(html) ||
         /class="[^"]*drawer[^"]*"/i.test(html);
     if (!hasMobileMenu) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Mobile Menu Not Detected',
             'Hamburger menu or mobile navigation toggle not found.',
@@ -384,10 +385,10 @@ function checkNavigation(crawlResults) {
         issues.push({ title: 'Breadcrumbs Present', severity: 'pass', description: 'Product pages have breadcrumbs' });
     }
 
-    // Search Functionality (3 pts)
+    // Search Functionality (2 pts)
     const hasSearch = /search|type="search"/i.test(html);
     if (!hasSearch) {
-        score -= 3;
+        score -= 2;
         issues.push(createSuggestion(
             'Search Functionality Missing',
             'No search icon or search form found in header.',
@@ -400,11 +401,11 @@ function checkNavigation(crawlResults) {
         issues.push({ title: 'Search Present', severity: 'pass', description: 'Search functionality exists' });
     }
 
-    // 404 Page (3 pts)
+    // 404 Page (2 pts)
     const page404 = pages.find(p => p.url?.includes('404') || p.statusCode === 404);
     const has404Custom = page404 && !/shopify|default/i.test(page404.html || '');
     if (!has404Custom) {
-        score -= 3;
+        score -= 2;
         issues.push(createSuggestion(
             '404 Page Not Customized',
             'Custom 404 error page not found or using Shopify default.',
@@ -423,28 +424,28 @@ function checkNavigation(crawlResults) {
 
     return {
         name: 'Navigation & Structure',
-        maxPoints: 20,
+        maxPoints: 15,
         score: Math.max(0, score),
         issues
     };
 }
 
 // ============================================
-// CATEGORY 3: Content Quality (20 pts)
+// CATEGORY 3: Content Quality (15 pts)
 // ============================================
 function checkContentQuality(crawlResults) {
     const issues = [];
-    let score = 20;
+    let score = 15;
     const { pages } = crawlResults;
     const homepage = pages[0];
     const html = homepage?.html || '';
     const allHtml = pages.map(p => p.html || '').join(' ');
     const allText = allHtml.replace(/<[^>]*>/g, ' ').toLowerCase();
 
-    // Homepage Copy (4 pts)
+    // Homepage Copy (3 pts)
     const hasPlaceholderHomepage = /lorem ipsum|placeholder text|sample text|edit this/i.test(html);
     if (hasPlaceholderHomepage) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Homepage Contains Placeholder Text',
             'Lorem ipsum or placeholder text found on homepage.',
@@ -457,7 +458,7 @@ function checkContentQuality(crawlResults) {
         issues.push({ title: 'Homepage Copy Clear', severity: 'pass', description: 'No placeholder text on homepage' });
     }
 
-    // Product Descriptions (4 pts)
+    // Product Descriptions (3 pts)
     const productPages = pages.filter(p => p.url?.includes('/products/'));
     const hasLoremProducts = productPages.some(p => /lorem ipsum/i.test(p.html || ''));
     const hasEmptyDescriptions = productPages.some(p => {
@@ -466,7 +467,7 @@ function checkContentQuality(crawlResults) {
     });
 
     if (hasLoremProducts) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Product Descriptions Have Placeholder Text',
             'Lorem ipsum found in product descriptions.',
@@ -489,11 +490,11 @@ function checkContentQuality(crawlResults) {
         issues.push({ title: 'Product Descriptions Present', severity: 'pass', description: 'Products have descriptions' });
     }
 
-    // Spelling & Grammar (4 pts) - Basic check for common issues
+    // Spelling & Grammar (2 pts)
     const commonTypos = ['teh ', 'recieve', 'seperate', 'occured', 'definately'];
     const hasTypos = commonTypos.some(typo => allText.includes(typo));
     if (hasTypos) {
-        score -= 4;
+        score -= 2;
         issues.push(createSuggestion(
             'Spelling Errors Detected',
             'Common spelling errors found on the website.',
@@ -506,12 +507,12 @@ function checkContentQuality(crawlResults) {
         issues.push({ title: 'No Obvious Spelling Errors', severity: 'pass', description: 'No common typos detected' });
     }
 
-    // Brand Consistency (4 pts)
+    // Brand Consistency (3 pts)
     const hasBrandPlaceholders = /\[brand name\]|\[company name\]|\[your brand\]|\[store name\]/i.test(allHtml);
     const hasShopifyBranding = /powered by shopify/i.test(allHtml);
 
     if (hasBrandPlaceholders) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Brand Name Placeholders Found',
             '"[Brand Name]" or similar placeholders found in content.',
@@ -580,30 +581,30 @@ function checkContentQuality(crawlResults) {
 
     return {
         name: 'Content Quality',
-        maxPoints: 20,
+        maxPoints: 15,
         score: Math.max(0, score),
         issues
     };
 }
 
 // ============================================
-// CATEGORY 4: Visual & Design (20 pts)
+// CATEGORY 4: Visual & Design (15 pts)
 // ============================================
 function checkVisualDesign(crawlResults) {
     const issues = [];
-    let score = 20;
+    let score = 15;
     const { pages } = crawlResults;
     const homepage = pages[0];
     const html = homepage?.html || '';
     const allHtml = pages.map(p => p.html || '').join(' ');
 
-    // Logo Implementation (4 pts)
+    // Logo Implementation (3 pts)
     const logoMatch = html.match(/<img[^>]*logo[^>]*>/i);
     const hasLogoAlt = logoMatch && /alt="[^"]+"/i.test(logoMatch[0]);
     const logoLinked = /<a[^>]*href="[^"]*\/"[^>]*>[\s\S]*?<img[^>]*logo/i.test(html);
 
     if (!logoMatch) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Logo Not Found',
             'Website logo image not detected.',
@@ -626,13 +627,13 @@ function checkVisualDesign(crawlResults) {
         issues.push({ title: 'Logo Properly Implemented', severity: 'pass', description: 'Logo present with alt text' });
     }
 
-    // Image Alt Text (4 pts)
+    // Image Alt Text (3 pts)
     const images = allHtml.match(/<img[^>]*>/gi) || [];
     const imagesWithoutAlt = images.filter(img => !/alt="[^"]+"/i.test(img) || /alt=""/i.test(img));
     const altPercentage = images.length > 0 ? ((images.length - imagesWithoutAlt.length) / images.length) * 100 : 100;
 
     if (altPercentage < 50) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Most Images Missing Alt Text',
             `Only ${Math.round(altPercentage)}% of images have alt text.`,
@@ -655,12 +656,12 @@ function checkVisualDesign(crawlResults) {
         issues.push({ title: 'Image Alt Text Good', severity: 'pass', description: 'Most images have alt text' });
     }
 
-    // Button Styling (4 pts)
+    // Button Styling (3 pts)
     const hasButtons = /<button|type="submit"|class="[^"]*btn[^"]*"/i.test(html);
     const hasDefaultBlue = /#1773b0|#008060|shopify-blue/i.test(allHtml);
 
     if (!hasButtons) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Button Elements Not Found',
             'Standard button elements not detected in HTML.',
@@ -683,12 +684,12 @@ function checkVisualDesign(crawlResults) {
         issues.push({ title: 'Button Styling Custom', severity: 'pass', description: 'Buttons appear customized' });
     }
 
-    // Color Consistency (4 pts)
+    // Color Consistency (3 pts)
     const cssVars = (allHtml.match(/--[a-zA-Z-]+:\s*#[0-9a-fA-F]+/g) || []).length;
     const hasColorSystem = cssVars > 3 || /theme|brand.*color/i.test(allHtml);
 
     if (!hasColorSystem) {
-        score -= 2;
+        score -= 1.5;
         issues.push(createSuggestion(
             'Color System Not Detected',
             'CSS custom properties for colors may not be set up.',
@@ -701,10 +702,10 @@ function checkVisualDesign(crawlResults) {
         issues.push({ title: 'Color System Present', severity: 'pass', description: 'Color variables detected' });
     }
 
-    // Typography (4 pts)
+    // Typography (3 pts)
     const hasCustomFonts = /font-family|@font-face|fonts\.googleapis|fonts\.shopify/i.test(allHtml);
     if (!hasCustomFonts) {
-        score -= 4;
+        score -= 3;
         issues.push(createSuggestion(
             'Custom Fonts Not Detected',
             'Website may be using default system fonts.',
@@ -719,29 +720,29 @@ function checkVisualDesign(crawlResults) {
 
     return {
         name: 'Visual & Design',
-        maxPoints: 20,
+        maxPoints: 15,
         score: Math.max(0, score),
         issues
     };
 }
 
 // ============================================
-// CATEGORY 5: Technical Markers (15 pts)
+// CATEGORY 5: Technical Markers (10 pts)
 // ============================================
 function checkTechnicalMarkers(crawlResults) {
     const issues = [];
-    let score = 15;
+    let score = 10;
     const { pages } = crawlResults;
     const allHtml = pages.map(p => p.html || '').join(' ');
     const productPages = pages.filter(p => p.url?.includes('/products/'));
 
-    // Add to Cart Button (3 pts)
+    // Add to Cart Button (2 pts)
     const hasAddToCart = productPages.some(p =>
         /add.to.cart|add-to-cart|AddToCart/i.test(p.html || '') ||
         /type="submit"[^>]*cart/i.test(p.html || '')
     );
     if (productPages.length > 0 && !hasAddToCart) {
-        score -= 3;
+        score -= 2;
         issues.push(createSuggestion(
             'Add to Cart Button Not Found',
             'Add to cart button not detected on product pages.',
@@ -754,10 +755,10 @@ function checkTechnicalMarkers(crawlResults) {
         issues.push({ title: 'Add to Cart Present', severity: 'pass', description: 'Add to cart buttons found' });
     }
 
-    // Cart Page (3 pts)
+    // Cart Page (2 pts)
     const cartPage = pages.find(p => p.url?.includes('/cart'));
     if (!cartPage) {
-        score -= 3;
+        score -= 2;
         issues.push(createSuggestion(
             'Cart Page Not Accessible',
             'Cart page could not be accessed or analyzed.',
@@ -770,13 +771,13 @@ function checkTechnicalMarkers(crawlResults) {
         issues.push({ title: 'Cart Page Accessible', severity: 'pass', description: 'Cart page exists' });
     }
 
-    // Quantity Selectors (2 pts)
+    // Quantity Selectors (1 pt)
     const hasQuantity = productPages.some(p =>
         /quantity|qty/i.test(p.html || '') &&
         /input|select/i.test(p.html || '')
     );
     if (productPages.length > 0 && !hasQuantity) {
-        score -= 2;
+        score -= 1;
         issues.push(createSuggestion(
             'Quantity Selector Not Found',
             'Quantity input not detected on product pages.',
@@ -827,14 +828,14 @@ function checkTechnicalMarkers(crawlResults) {
         issues.push({ title: 'Newsletter Signup Present', severity: 'pass', description: 'Email signup form found' });
     }
 
-    // Social Links (3 pts)
+    // Social Links (2 pts)
     const socialPlatforms = ['facebook', 'instagram', 'twitter', 'tiktok', 'youtube', 'pinterest', 'linkedin'];
     const foundSocials = socialPlatforms.filter(s =>
         new RegExp(`href="[^"]*${s}\\.com`, 'i').test(allHtml)
     );
 
     if (foundSocials.length === 0) {
-        score -= 3;
+        score -= 2;
         issues.push(createSuggestion(
             'Social Media Links Missing',
             'No social media links found on the website.',
@@ -862,7 +863,7 @@ function checkTechnicalMarkers(crawlResults) {
 
     return {
         name: 'Technical Markers',
-        maxPoints: 15,
+        maxPoints: 10,
         score: Math.max(0, score),
         issues
     };

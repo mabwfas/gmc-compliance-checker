@@ -10,42 +10,49 @@ function ScanProgress({ progress }) {
         checksRunning: 0
     });
 
-    // ShopScore 5 categories with specific checkpoints
+    // ShopScore v2.0 - 6 categories with specific checkpoints
     const checkCategories = [
         {
             name: 'Essential Pages',
             icon: '📜',
-            checks: ['Privacy Policy', 'Refund Policy', 'Shipping Policy', 'Terms of Service', 'Contact Page', 'Track Order'],
-            threshold: 5,
-            points: 25
+            checks: ['Privacy', 'Refund', 'Shipping', 'Terms', 'Contact', 'Track Order'],
+            threshold: 0,
+            points: 20
         },
         {
             name: 'Navigation',
             icon: '🧭',
-            checks: ['Header Nav', 'Footer Links', 'Mobile Menu', 'Breadcrumbs', 'Search', '404 Page'],
-            threshold: 25,
-            points: 20
+            checks: ['Header', 'Footer', 'Mobile Menu', 'Breadcrumbs', 'Search', '404'],
+            threshold: 15,
+            points: 15
         },
         {
-            name: 'Content Quality',
+            name: 'Content',
             icon: '📝',
-            checks: ['Homepage Copy', 'Product Desc', 'Spelling Check', 'Brand Names', 'Meta Info'],
-            threshold: 45,
-            points: 20
+            checks: ['Homepage', 'Products', 'Spelling', 'Brand', 'Meta'],
+            threshold: 30,
+            points: 15
         },
         {
-            name: 'Visual & Design',
+            name: 'Visual',
             icon: '🎨',
-            checks: ['Logo', 'Alt Text', 'Buttons', 'Colors', 'Typography'],
-            threshold: 65,
-            points: 20
+            checks: ['Logo', 'Alt Text', 'Buttons', 'Colors', 'Fonts'],
+            threshold: 45,
+            points: 15
         },
         {
             name: 'Technical',
             icon: '⚙️',
-            checks: ['Add to Cart', 'Cart Page', 'Quantity', 'Variants', 'Newsletter', 'Social Links'],
-            threshold: 85,
-            points: 15
+            checks: ['Cart', 'Checkout', 'Variants', 'Newsletter', 'Social'],
+            threshold: 60,
+            points: 10
+        },
+        {
+            name: 'GMC Compliance',
+            icon: '🛒',
+            checks: ['Business ID', 'Policies', 'Pricing', 'Products', 'Schema'],
+            threshold: 75,
+            points: 25
         }
     ];
 

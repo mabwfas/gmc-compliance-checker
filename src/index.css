@@ -7768,3 +7768,68 @@ select:focus-visible {
         grid-template-columns: 1fr;
     }
 }
+
+/* ============================================
+   GMC STATUS BADGE
+   ============================================ */
+.gmc-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: var(--space-xs) 0;
+}
+
+.gmc-status-badge.gmc-ready {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: var(--success);
+}
+
+.gmc-status-badge.gmc-warning {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: var(--warning);
+}
+
+.gmc-status-badge.gmc-not-ready {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: var(--critical);
+}
+
+.gmc-icon {
+    font-size: 0.9rem;
+}
+
+.gmc-text {
+    font-family: 'SF Mono', monospace;
+}
+
+/* Category score grid for 6 items */
+.category-scores-grid {
+    grid-template-columns: repeat(6, 1fr);
+}
+
+@media (max-width: 1200px) {
+    .category-scores-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .category-scores-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .category-scores-grid {
+        grid-template-columns: 1fr;
+    }
+}
