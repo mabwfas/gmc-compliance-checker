@@ -1,10 +1,9 @@
 /**
- * Brand Consistency Checker
- * Analyzes brand elements across all pages for consistency
- * Critical for professional brand appearance
+ * Brand Consistency Checker - STRICT VERSION
+ * Analyzes brand elements with rigorous, specific checks
+ * Will find issues on most websites
  */
 
-// Helper to create a brand suggestion
 function createBrandSuggestion(title, description, location, impact, fix, codeExample = null) {
     const impactMessages = {
         critical: 'Inconsistent branding damages professional perception',
@@ -28,217 +27,11 @@ function createBrandSuggestion(title, description, location, impact, fix, codeEx
 
 export function checkBrandConsistency(crawlResults) {
     const issues = [];
-    let score = 15; // Max 15 points for brand consistency
+    let score = 10; // Max 10 points
 
     const pages = crawlResults.pages || [];
     const allHtml = pages.map(p => p.html || '').join(' ');
     const allHtmlLower = allHtml.toLowerCase();
-
-    // ============================================
-    // 1. Logo Presence on Every Page (4 pts)
-    // ============================================
-    const logoPatterns = [
-        /<img[^>]*logo[^>]*>/gi,
-        /class="[^"]*logo[^"]*"/gi,
-        /id="[^"]*logo[^"]*"/gi,
-        /<a[^>]*class="[^"]*brand[^"]*"[^>]*>/gi,
-        /site-logo|header-logo|brand-logo/gi
-    ];
-
-    let pagesWithLogo = 0;
-    let pagesWithoutLogo = [];
-
-    pages.forEach(page => {
-        const pageHtml = page.html || '';
-        const hasLogo = logoPatterns.some(p => p.test(pageHtml));
-        if (hasLogo) {
-            pagesWithLogo++;
-        } else {
-            pagesWithoutLogo.push(page.url);
-        }
-        // Reset regex lastIndex
-        logoPatterns.forEach(p => p.lastIndex = 0);
-    });
-
-    const logoPercentage = pages.length > 0 ? (pagesWithLogo / pages.length) * 100 : 0;
-
-    if (logoPercentage < 50) {
-        score -= 4;
-        issues.push(createBrandSuggestion(
-            'Logo Missing on Most Pages',
-            `Logo only found on ${Math.round(logoPercentage)}% of pages. Brand should be visible everywhere.`,
-            '/',
-            'critical',
-            [
-                'Add logo to header on all page templates',
-                'Ensure logo links back to homepage',
-                'Use consistent logo placement'
-            ],
-            `<header>
-  <a href="/" class="logo">
-    <img src="/logo.svg" alt="Brand Name" width="150" height="50">
-  </a>
-</header>`
-        ));
-    } else if (logoPercentage < 90) {
-        score -= 2;
-        issues.push(createBrandSuggestion(
-            'Logo Missing on Some Pages',
-            `Logo found on ${Math.round(logoPercentage)}% of pages. ${pagesWithoutLogo.length} pages missing logo.`,
-            pagesWithoutLogo[0] || '/',
-            'medium',
-            ['Add logo to all page templates', 'Check special landing pages'],
-            null
-        ));
-    } else {
-        issues.push({ title: 'Logo Present Everywhere', severity: 'pass', description: 'Logo found on all pages' });
-    }
-
-    // ============================================
-    // 2. Favicon Present (2 pts)
-    // ============================================
-    const faviconPatterns = [
-        /<link[^>]*rel=["'](?:shortcut\s*)?icon["'][^>]*>/i,
-        /<link[^>]*rel=["']apple-touch-icon["'][^>]*>/i,
-        /favicon/i
-    ];
-
-    const hasFavicon = faviconPatterns.some(p => p.test(allHtml));
-
-    if (!hasFavicon) {
-        score -= 2;
-        issues.push(createBrandSuggestion(
-            'Favicon Missing',
-            'No favicon detected. This appears in browser tabs and bookmarks.',
-            '/',
-            'high',
-            [
-                'Add a 32x32 favicon.ico',
-                'Add Apple touch icons for mobile',
-                'Use your logo or brand mark as favicon'
-            ],
-            `<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">`
-        ));
-    } else {
-        issues.push({ title: 'Favicon Present', severity: 'pass', description: 'Favicon detected' });
-    }
-
-    // ============================================
-    // 3. Consistent Color Palette (3 pts)
-    // ============================================
-    // Extract hex colors from CSS
-    const colorRegex = /#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g;
-    const rgbRegex = /rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/g;
-
-    const hexColors = allHtml.match(colorRegex) || [];
-    const rgbColors = allHtml.match(rgbRegex) || [];
-    const uniqueColors = new Set([...hexColors.map(c => c.toLowerCase())]);
-
-    // Too many colors = inconsistent brand
-    if (uniqueColors.size > 20) {
-        score -= 2;
-        issues.push(createBrandSuggestion(
-            'Too Many Colors Used',
-            `Found ${uniqueColors.size} different colors. A consistent brand uses 3-5 primary colors.`,
-            '/',
-            'medium',
-            [
-                'Define a brand color palette (primary, secondary, accent)',
-                'Use CSS custom properties for colors',
-                'Limit to 3-5 main brand colors',
-                'Use tints/shades of primary colors for variation'
-            ],
-            `:root {
-  --brand-primary: #2563eb;
-  --brand-secondary: #10b981;
-  --brand-accent: #f59e0b;
-  --brand-dark: #1f2937;
-  --brand-light: #f9fafb;
-}`
-        ));
-    } else if (uniqueColors.size < 3) {
-        score -= 1;
-        issues.push(createBrandSuggestion(
-            'Limited Color Palette',
-            'Very few colors detected. Consider adding accent colors for visual interest.',
-            '/',
-            'low',
-            ['Add secondary and accent colors to brand palette'],
-            null
-        ));
-    } else {
-        issues.push({ title: 'Consistent Color Palette', severity: 'pass', description: `${uniqueColors.size} colors in use` });
-    }
-
-    // ============================================
-    // 4. Typography Consistency (3 pts)
-    // ============================================
-    const fontPatterns = [
-        /font-family:\s*["']?([^"';,]+)/gi,
-        /fonts\.googleapis\.com\/css[^"']+family=([^"'&]+)/gi
-    ];
-
-    const fonts = new Set();
-    fontPatterns.forEach(pattern => {
-        let match;
-        while ((match = pattern.exec(allHtml)) !== null) {
-            fonts.add(match[1].trim().toLowerCase().replace(/['"]/g, ''));
-        }
-    });
-
-    // Filter out system fonts
-    const systemFonts = ['arial', 'helvetica', 'sans-serif', 'serif', 'monospace', 'inherit', 'initial'];
-    const brandFonts = [...fonts].filter(f => !systemFonts.some(sf => f.includes(sf)));
-
-    if (brandFonts.length === 0) {
-        score -= 2;
-        issues.push(createBrandSuggestion(
-            'No Custom Brand Fonts',
-            'Using only system fonts. Custom fonts strengthen brand identity.',
-            '/',
-            'medium',
-            [
-                'Choose 1-2 brand fonts from Google Fonts',
-                'Use one font for headings, another for body',
-                'Ensure fonts match brand personality'
-            ],
-            `<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-
-<style>
-  h1, h2, h3 { font-family: 'Outfit', sans-serif; }
-  body { font-family: 'Inter', sans-serif; }
-</style>`
-        ));
-    } else if (brandFonts.length > 4) {
-        score -= 2;
-        issues.push(createBrandSuggestion(
-            'Too Many Fonts',
-            `${brandFonts.length} different fonts detected. Stick to 2-3 for consistency.`,
-            '/',
-            'medium',
-            [
-                'Limit to 2-3 font families',
-                'Use font weights instead of different fonts',
-                'Choose one display font and one body font'
-            ],
-            null
-        ));
-    } else {
-        issues.push({ title: 'Typography Consistent', severity: 'pass', description: `${brandFonts.length} brand fonts in use` });
-    }
-
-    // ============================================
-    // 5. Tagline/Value Proposition (3 pts)
-    // ============================================
-    const taglinePatterns = [
-        /<h1[^>]*>.*<\/h1>/gi,
-        /class="[^"]*tagline[^"]*"/gi,
-        /class="[^"]*hero-text[^"]*"/gi,
-        /class="[^"]*value-prop[^"]*"/gi,
-        /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/gi
-    ];
 
     const homePage = pages.find(p =>
         p.url === crawlResults.baseUrl ||
@@ -246,49 +39,270 @@ export function checkBrandConsistency(crawlResults) {
     ) || pages[0];
     const homeHtml = homePage?.html || '';
 
-    const hasTagline = taglinePatterns.some(p => {
-        p.lastIndex = 0;
-        return p.test(homeHtml);
-    });
+    // ============================================
+    // 1. SVG/High-Quality Logo (2 pts)
+    // Must have actual logo, not just text
+    // ============================================
+    const logoPatterns = [
+        /<img[^>]*logo[^>]*\.(svg|png|webp)/i,
+        /<svg[^>]*logo/i,
+        /class="[^"]*logo[^"]*"[^>]*><img/i,
+        /site-logo.*<img/i
+    ];
 
-    // Check for meta description
-    const metaDescMatch = homeHtml.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
-    const hasMetaDesc = metaDescMatch && metaDescMatch[1].length > 50;
+    const hasProperLogo = logoPatterns.some(p => p.test(allHtml));
 
-    if (!hasTagline && !hasMetaDesc) {
-        score -= 3;
+    // Check for text-only logo (bad)
+    const textOnlyLogo = /<(h1|span|div)[^>]*class="[^"]*logo[^"]*"[^>]*>[^<]*<\/(h1|span|div)>/i.test(allHtml);
+
+    if (!hasProperLogo) {
+        score -= 2;
         issues.push(createBrandSuggestion(
-            'No Clear Value Proposition',
-            'Homepage lacks a clear tagline or value proposition in the hero section.',
+            'No Image Logo Found',
+            textOnlyLogo ? 'Logo appears to be text-only. Use an actual image/SVG.' : 'No logo image detected on the site.',
+            '/',
+            'critical',
+            [
+                'Add SVG logo for crisp display',
+                'Include logo in header on all pages',
+                'Use at least 150px width for visibility'
+            ],
+            `<a href="/" class="logo">
+  <img src="/logo.svg" alt="Brand Name" width="180" height="60">
+</a>`
+        ));
+    } else {
+        issues.push({ title: 'Image Logo Present', severity: 'pass', description: 'Proper logo file found' });
+    }
+
+    // ============================================
+    // 2. Favicon with Multiple Sizes (1 pt)
+    // ============================================
+    const faviconPatterns = [
+        /<link[^>]*rel=["']icon["'][^>]*>/i,
+        /<link[^>]*rel=["']shortcut icon["'][^>]*>/i
+    ];
+    const appleTouchIcon = /<link[^>]*rel=["']apple-touch-icon["'][^>]*>/i.test(allHtml);
+    const hasFavicon = faviconPatterns.some(p => p.test(allHtml));
+
+    if (!hasFavicon) {
+        score -= 1;
+        issues.push(createBrandSuggestion(
+            'No Favicon',
+            'No favicon found. This appears in browser tabs.',
+            '/',
+            'high',
+            ['Add favicon.ico or PNG favicon', 'Add Apple touch icon for iOS'],
+            `<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">`
+        ));
+    } else if (!appleTouchIcon) {
+        score -= 0.5;
+        issues.push(createBrandSuggestion(
+            'Missing Apple Touch Icon',
+            'Favicon exists but no Apple touch icon for iOS devices.',
+            '/',
+            'low',
+            ['Add apple-touch-icon for better iOS appearance'],
+            null
+        ));
+    } else {
+        issues.push({ title: 'Favicon Complete', severity: 'pass', description: 'All favicon sizes present' });
+    }
+
+    // ============================================
+    // 3. Consistent Footer Branding (1 pt)
+    // ============================================
+    const footerPatterns = [
+        /<footer/i
+    ];
+    const hasFooter = footerPatterns.some(p => p.test(allHtml));
+
+    // Check footer has logo and brand info
+    const footerMatch = allHtml.match(/<footer[^>]*>([\s\S]*?)<\/footer>/i);
+    const footerContent = footerMatch ? footerMatch[1] : '';
+    const footerHasLogo = /logo|brand/i.test(footerContent) && /<img/i.test(footerContent);
+    const footerHasCopyright = /©|copyright|\d{4}/i.test(footerContent);
+
+    if (!hasFooter || !footerHasCopyright) {
+        score -= 1;
+        issues.push(createBrandSuggestion(
+            'Incomplete Footer Branding',
+            'Footer missing logo, copyright, or brand information.',
+            '/',
+            'medium',
+            [
+                'Add logo to footer',
+                'Include copyright notice with year',
+                'Add company address/info'
+            ],
+            null
+        ));
+    } else {
+        issues.push({ title: 'Footer Branding Present', severity: 'pass', description: 'Footer has brand elements' });
+    }
+
+    // ============================================
+    // 4. Branded Loading State (1 pt)
+    // ============================================
+    const loadingPatterns = [
+        /loading/i,
+        /skeleton/i,
+        /placeholder/i,
+        /spinner.*brand/i,
+        /preloader/i
+    ];
+
+    const hasBrandedLoading = loadingPatterns.some(p => p.test(allHtml));
+
+    if (!hasBrandedLoading) {
+        score -= 1;
+        issues.push(createBrandSuggestion(
+            'No Branded Loading States',
+            'No skeleton loaders or branded spinners detected.',
+            '/',
+            'low',
+            [
+                'Add skeleton loading for products',
+                'Use brand colors in loading spinners',
+                'Add preloader with logo'
+            ],
+            null
+        ));
+    } else {
+        issues.push({ title: 'Loading States Present', severity: 'pass', description: 'Loading UI detected' });
+    }
+
+    // ============================================
+    // 5. Meta Brand Info (OG Tags) (1 pt)
+    // ============================================
+    const ogTagPatterns = [
+        /<meta[^>]*property=["']og:title["']/i,
+        /<meta[^>]*property=["']og:image["']/i,
+        /<meta[^>]*property=["']og:description["']/i
+    ];
+
+    const ogTagCount = ogTagPatterns.filter(p => p.test(allHtml)).length;
+
+    if (ogTagCount < 2) {
+        score -= 1;
+        issues.push(createBrandSuggestion(
+            'Missing Open Graph Tags',
+            'Incomplete OG meta tags. Links shared on social media won\'t look professional.',
             '/',
             'high',
             [
-                'Add a compelling H1 headline',
-                'Include a tagline under the logo',
-                'State your unique value in 10 words or less',
-                'Answer "What do you do?" immediately'
+                'Add og:title, og:description, og:image',
+                'Use branded image for og:image',
+                'Test with Facebook Debugger'
             ],
-            `<section class="hero">
-  <h1>Premium Eco-Friendly Products for Modern Living</h1>
-  <p class="tagline">Sustainable style, delivered to your door</p>
-  <a href="/shop" class="cta">Shop Now</a>
-</section>`
+            `<meta property="og:title" content="Your Brand Name">
+<meta property="og:description" content="Your compelling description">
+<meta property="og:image" content="https://yoursite.com/og-image.jpg">`
         ));
     } else {
-        issues.push({ title: 'Value Proposition Present', severity: 'pass', description: 'Headline or tagline detected' });
+        issues.push({ title: 'OG Tags Present', severity: 'pass', description: 'Social sharing optimized' });
+    }
+
+    // ============================================
+    // 6. Consistent Button Styling (1 pt)
+    // ============================================
+    const buttonPatterns = [
+        /btn-primary/i,
+        /button--primary/i,
+        /cta-button/i,
+        /shopify-payment-button/i
+    ];
+
+    // Check for inconsistent button classes
+    const buttonClasses = allHtml.match(/class="[^"]*btn[^"]*"/gi) || [];
+    const uniqueButtonStyles = new Set(buttonClasses.map(b => b.toLowerCase()));
+
+    if (uniqueButtonStyles.size > 8) {
+        score -= 1;
+        issues.push(createBrandSuggestion(
+            'Inconsistent Button Styles',
+            `Found ${uniqueButtonStyles.size} different button styles. Use consistent CTA styling.`,
+            '/',
+            'medium',
+            [
+                'Standardize primary/secondary button classes',
+                'Use consistent colors and sizes',
+                'Create button design system'
+            ],
+            null
+        ));
+    } else {
+        issues.push({ title: 'Button Styling Consistent', severity: 'pass', description: 'Buttons are uniform' });
+    }
+
+    // ============================================
+    // 7. Brand Color in Theme Color (1 pt)
+    // ============================================
+    const themeColorPattern = /<meta[^>]*name=["']theme-color["'][^>]*>/i;
+    const hasThemeColor = themeColorPattern.test(allHtml);
+
+    if (!hasThemeColor) {
+        score -= 1;
+        issues.push(createBrandSuggestion(
+            'No Theme Color Set',
+            'No theme-color meta tag. Mobile browser UI won\'t match brand.',
+            '/',
+            'low',
+            [
+                'Add theme-color meta tag with brand color',
+                'Enhances mobile browser appearance'
+            ],
+            `<meta name="theme-color" content="#2563eb">`
+        ));
+    } else {
+        issues.push({ title: 'Theme Color Set', severity: 'pass', description: 'Mobile UI branded' });
+    }
+
+    // ============================================
+    // 8. Professional Email Domain (1 pt)
+    // ============================================
+    const emailPatterns = [
+        /(?:mailto:)?[\w.-]+@(gmail|yahoo|hotmail|outlook)\.(com|net)/gi
+    ];
+
+    const hasFreeEmail = emailPatterns.some(p => p.test(allHtml));
+    const hasBrandedEmail = /@[a-z0-9-]+\.(com|co|io|store|shop)/i.test(allHtml) && !hasFreeEmail;
+
+    if (hasFreeEmail) {
+        score -= 1;
+        issues.push(createBrandSuggestion(
+            'Using Free Email Provider',
+            'Contact email uses Gmail/Yahoo instead of branded domain.',
+            '/contact',
+            'high',
+            [
+                'Use email@yourdomain.com instead',
+                'Set up custom domain email',
+                'More professional and trustworthy'
+            ],
+            null
+        ));
+    } else if (!hasBrandedEmail) {
+        issues.push({ title: 'Email Domain Check', severity: 'pass', description: 'No free email detected' });
+    } else {
+        issues.push({ title: 'Branded Email', severity: 'pass', description: 'Professional email domain' });
     }
 
     return {
         name: 'Brand Consistency',
-        maxPoints: 15,
-        score: Math.max(0, score),
+        maxPoints: 10,
+        score: Math.max(0, Math.round(score)),
         issues,
         subcategories: [
-            { name: 'Logo Everywhere', maxPoints: 4 },
-            { name: 'Favicon', maxPoints: 2 },
-            { name: 'Color Palette', maxPoints: 3 },
-            { name: 'Typography', maxPoints: 3 },
-            { name: 'Value Proposition', maxPoints: 3 }
+            { name: 'Image Logo', maxPoints: 2 },
+            { name: 'Favicon', maxPoints: 1 },
+            { name: 'Footer Branding', maxPoints: 1 },
+            { name: 'Loading States', maxPoints: 1 },
+            { name: 'OG Tags', maxPoints: 1 },
+            { name: 'Button Styles', maxPoints: 1 },
+            { name: 'Theme Color', maxPoints: 1 },
+            { name: 'Email Domain', maxPoints: 1 }
         ]
     };
 }
