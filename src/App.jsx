@@ -275,10 +275,10 @@ function App() {
             <aside className="sidebar">
                 {/* App Branding */}
                 <div className="sidebar-brand">
-                    <div className="brand-icon">📊</div>
+                    <div className="brand-icon">🦸</div>
                     <div className="brand-text">
-                        <h1>ShopScore</h1>
-                        <p>Shopify QA Audit Tool</p>
+                        <h1>HeroScore</h1>
+                        <p>Brand Quality Audit Tool</p>
                     </div>
                 </div>
 
@@ -447,34 +447,59 @@ function App() {
                             <section className="content-section">
                                 <div className="empty-state">
                                     <div className="empty-state-content">
-                                        <div className="empty-state-icon">🔍</div>
+                                        <div className="empty-state-icon">🦸</div>
                                         <h3>Ready to Analyze</h3>
                                         <p>Enter a website URL in the sidebar and click Start Scan</p>
 
-                                        <div className="features-grid">
-                                            <div className="feature-item">
-                                                <span className="feature-icon">📜</span>
-                                                <span className="feature-text">Essential Pages (20pts)</span>
+                                        <div className="features-section">
+                                            <h4>Core Quality (50pts)</h4>
+                                            <div className="features-grid">
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">📜</span>
+                                                    <span className="feature-text">Essential Pages (15pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">🧭</span>
+                                                    <span className="feature-text">Navigation (10pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">📝</span>
+                                                    <span className="feature-text">Content (10pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">⚙️</span>
+                                                    <span className="feature-text">Technical (5pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">🛒</span>
+                                                    <span className="feature-text">GMC Ready (10pts)</span>
+                                                </div>
                                             </div>
-                                            <div className="feature-item">
-                                                <span className="feature-icon">🧭</span>
-                                                <span className="feature-text">Navigation (15pts)</span>
-                                            </div>
-                                            <div className="feature-item">
-                                                <span className="feature-icon">📝</span>
-                                                <span className="feature-text">Content (15pts)</span>
-                                            </div>
-                                            <div className="feature-item">
-                                                <span className="feature-icon">🎨</span>
-                                                <span className="feature-text">Visual (15pts)</span>
-                                            </div>
-                                            <div className="feature-item">
-                                                <span className="feature-icon">⚙️</span>
-                                                <span className="feature-text">Technical (10pts)</span>
-                                            </div>
-                                            <div className="feature-item">
-                                                <span className="feature-icon">🛒</span>
-                                                <span className="feature-text">GMC Compliance (25pts)</span>
+                                        </div>
+
+                                        <div className="features-section">
+                                            <h4>Brand Focused (50pts)</h4>
+                                            <div className="features-grid">
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">🏆</span>
+                                                    <span className="feature-text">Trust Signals (15pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">🎨</span>
+                                                    <span className="feature-text">Brand Consistency (10pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">✨</span>
+                                                    <span className="feature-text">Visual Design (10pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">🎯</span>
+                                                    <span className="feature-text">Conversion (10pts)</span>
+                                                </div>
+                                                <div className="feature-item">
+                                                    <span className="feature-icon">📱</span>
+                                                    <span className="feature-text">Mobile (10pts)</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -485,7 +510,7 @@ function App() {
                 )}
 
                 <footer className="app-footer">
-                    <p>ShopScore • Shopify QA Audit Tool by Digital Marketing Heroes</p>
+                    <p>HeroScore • Made with ❤️ by Digital Heroes Team - Shreyansh</p>
                 </footer>
             </main>
         </div>

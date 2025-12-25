@@ -1,17 +1,29 @@
-// ShopScore v2.0 Checkers Index
-// 6-category Shopify QA audit with GMC Compliance
+// ShopScore v3.0 Checkers Index
+// 10-category Shopify QA audit with Brand-Focused Reports
 
 import { checkEssentialPages, checkNavigation, checkContentQuality, checkVisualDesign, checkTechnicalMarkers } from './shopScoreChecker';
 import { checkGMCCompliance } from './gmcChecker';
+import { checkTrustSignals } from './trustChecker';
+import { checkBrandConsistency } from './brandChecker';
+import { checkConversionOptimization } from './conversionChecker';
+import { checkMobileExperience } from './mobileChecker';
 
-// List of all ShopScore categories (v2.0 - 100 points)
+// List of all ShopScore categories (v3.0 - 100 points)
+// Rebalanced with brand-focused categories
 const shopScoreCategories = [
-    { name: 'Essential Pages & Policies', fn: checkEssentialPages, maxPoints: 20 },
-    { name: 'Navigation & Structure', fn: checkNavigation, maxPoints: 15 },
-    { name: 'Content Quality', fn: checkContentQuality, maxPoints: 15 },
-    { name: 'Visual & Design', fn: checkVisualDesign, maxPoints: 15 },
-    { name: 'Technical Markers', fn: checkTechnicalMarkers, maxPoints: 10 },
-    { name: 'GMC Compliance', fn: checkGMCCompliance, maxPoints: 25 }
+    // Core Quality Checks (50 pts)
+    { name: 'Essential Pages & Policies', fn: checkEssentialPages, maxPoints: 15, group: 'core' },
+    { name: 'Navigation & Structure', fn: checkNavigation, maxPoints: 10, group: 'core' },
+    { name: 'Content Quality', fn: checkContentQuality, maxPoints: 10, group: 'core' },
+    { name: 'Technical Markers', fn: checkTechnicalMarkers, maxPoints: 5, group: 'core' },
+    { name: 'GMC Compliance', fn: checkGMCCompliance, maxPoints: 10, group: 'core' },
+
+    // Brand & Conversion Checks (50 pts) - NEW
+    { name: 'Trust & Credibility', fn: checkTrustSignals, maxPoints: 15, group: 'brand' },
+    { name: 'Brand Consistency', fn: checkBrandConsistency, maxPoints: 10, group: 'brand' },
+    { name: 'Visual & Design', fn: checkVisualDesign, maxPoints: 10, group: 'brand' },
+    { name: 'Conversion Optimization', fn: checkConversionOptimization, maxPoints: 10, group: 'brand' },
+    { name: 'Mobile Experience', fn: checkMobileExperience, maxPoints: 10, group: 'brand' }
 ];
 
 export async function runAllCheckers(crawlResults, onProgress) {
@@ -27,7 +39,17 @@ export async function runAllCheckers(crawlResults, onProgress) {
 
         try {
             const result = category.fn(crawlResults);
-            results.push(result);
+
+            // Normalize score to maxPoints for this category
+            const normalizedScore = Math.min(result.score || 0, category.maxPoints);
+
+            results.push({
+                ...result,
+                name: category.name,
+                maxPoints: category.maxPoints,
+                score: normalizedScore,
+                group: category.group
+            });
 
             // Track GMC result separately for status
             if (category.name === 'GMC Compliance') {
@@ -39,6 +61,7 @@ export async function runAllCheckers(crawlResults, onProgress) {
                 name: category.name,
                 maxPoints: category.maxPoints,
                 score: 0,
+                group: category.group,
                 issues: [{
                     title: 'Check Failed',
                     severity: 'warning',
@@ -47,7 +70,7 @@ export async function runAllCheckers(crawlResults, onProgress) {
             });
         }
 
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     if (onProgress) {
@@ -56,6 +79,10 @@ export async function runAllCheckers(crawlResults, onProgress) {
 
     // Calculate overall score
     const totalScore = results.reduce((sum, cat) => sum + (cat.score || 0), 0);
+
+    // Calculate group scores
+    const coreScore = results.filter(r => r.group === 'core').reduce((sum, cat) => sum + (cat.score || 0), 0);
+    const brandScore = results.filter(r => r.group === 'brand').reduce((sum, cat) => sum + (cat.score || 0), 0);
 
     // Determine overall status
     let status, statusColor;
@@ -78,7 +105,7 @@ export async function runAllCheckers(crawlResults, onProgress) {
     const impactOrder = { critical: 0, high: 1, medium: 2, low: 3 };
 
     results.forEach(cat => {
-        cat.issues.forEach(issue => {
+        (cat.issues || []).forEach(issue => {
             if (issue.severity !== 'pass') {
                 allIssues.push({ ...issue, category: cat.name });
             }
@@ -91,6 +118,10 @@ export async function runAllCheckers(crawlResults, onProgress) {
     results.shopScoreData = {
         totalScore,
         maxScore: 100,
+        coreScore,
+        coreMaxScore: 50,
+        brandScore,
+        brandMaxScore: 50,
         status,
         statusColor,
         // GMC specific status
@@ -114,5 +145,9 @@ export {
     checkContentQuality,
     checkVisualDesign,
     checkTechnicalMarkers,
-    checkGMCCompliance
+    checkGMCCompliance,
+    checkTrustSignals,
+    checkBrandConsistency,
+    checkConversionOptimization,
+    checkMobileExperience
 };

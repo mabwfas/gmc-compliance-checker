@@ -10,49 +10,89 @@ function ScanProgress({ progress }) {
         checksRunning: 0
     });
 
-    // ShopScore v2.0 - 6 categories with specific checkpoints
+    // HeroScore v3.0 - 10 categories with specific checkpoints
     const checkCategories = [
+        // Core Quality Checks (50pts)
         {
             name: 'Essential Pages',
             icon: '📜',
-            checks: ['Privacy', 'Refund', 'Shipping', 'Terms', 'Contact', 'Track Order'],
+            checks: ['Privacy', 'Refund', 'Shipping', 'Terms', 'Contact'],
             threshold: 0,
-            points: 20
+            points: 15,
+            group: 'core'
         },
         {
             name: 'Navigation',
             icon: '🧭',
-            checks: ['Header', 'Footer', 'Mobile Menu', 'Breadcrumbs', 'Search', '404'],
-            threshold: 15,
-            points: 15
+            checks: ['Header', 'Footer', 'Menu', 'Search'],
+            threshold: 8,
+            points: 10,
+            group: 'core'
         },
         {
             name: 'Content',
             icon: '📝',
-            checks: ['Homepage', 'Products', 'Spelling', 'Brand', 'Meta'],
-            threshold: 30,
-            points: 15
-        },
-        {
-            name: 'Visual',
-            icon: '🎨',
-            checks: ['Logo', 'Alt Text', 'Buttons', 'Colors', 'Fonts'],
-            threshold: 45,
-            points: 15
+            checks: ['Homepage', 'Products', 'Meta'],
+            threshold: 16,
+            points: 10,
+            group: 'core'
         },
         {
             name: 'Technical',
             icon: '⚙️',
-            checks: ['Cart', 'Checkout', 'Variants', 'Newsletter', 'Social'],
-            threshold: 60,
-            points: 10
+            checks: ['Cart', 'Checkout', 'Speed'],
+            threshold: 24,
+            points: 5,
+            group: 'core'
         },
         {
-            name: 'GMC Compliance',
+            name: 'GMC Ready',
             icon: '🛒',
-            checks: ['Business ID', 'Policies', 'Pricing', 'Products', 'Schema'],
-            threshold: 75,
-            points: 25
+            checks: ['Business', 'Policies', 'Schema'],
+            threshold: 32,
+            points: 10,
+            group: 'core'
+        },
+        // Brand Focused Checks (50pts)
+        {
+            name: 'Trust Signals',
+            icon: '🏆',
+            checks: ['Reviews', 'Badges', 'Social Proof', 'Contact'],
+            threshold: 40,
+            points: 15,
+            group: 'brand'
+        },
+        {
+            name: 'Brand',
+            icon: '🎨',
+            checks: ['Logo', 'Colors', 'Fonts', 'Tagline'],
+            threshold: 50,
+            points: 10,
+            group: 'brand'
+        },
+        {
+            name: 'Visual',
+            icon: '✨',
+            checks: ['Images', 'Layout', 'Buttons'],
+            threshold: 60,
+            points: 10,
+            group: 'brand'
+        },
+        {
+            name: 'Conversion',
+            icon: '🎯',
+            checks: ['CTAs', 'Hero', 'Email', 'Urgency'],
+            threshold: 70,
+            points: 10,
+            group: 'brand'
+        },
+        {
+            name: 'Mobile',
+            icon: '📱',
+            checks: ['Viewport', 'Responsive', 'Touch'],
+            threshold: 82,
+            points: 10,
+            group: 'brand'
         }
     ];
 
@@ -99,7 +139,7 @@ function ScanProgress({ progress }) {
                     <span className="status-text">AUDITING</span>
                 </div>
                 <div className="status-center">
-                    <span className="current-task">{progress.currentTask || 'Initializing ShopScore...'}</span>
+                    <span className="current-task">{progress.currentTask || 'Initializing HeroScore...'}</span>
                 </div>
                 <div className="status-right">
                     <span className="percent-display">{Math.round(progress.percent)}%</span>
@@ -111,8 +151,8 @@ function ScanProgress({ progress }) {
                 {/* Left: Check Categories */}
                 <div className="checks-column">
                     <div className="column-header">
-                        <span className="column-icon">📊</span>
-                        <span>ShopScore Audit</span>
+                        <span className="column-icon">🦸</span>
+                        <span>HeroScore Audit</span>
                     </div>
                     <div className="checks-grid">
                         {checkCategories.map((cat, idx) => {
@@ -165,7 +205,7 @@ function ScanProgress({ progress }) {
                     </div>
 
                     <div className="progress-info">
-                        <h2>ShopScore Audit</h2>
+                        <h2>HeroScore Audit</h2>
                         <p>{progress.currentTask || 'Quality Analysis in Progress'}</p>
                     </div>
 
@@ -204,8 +244,8 @@ function ScanProgress({ progress }) {
                         <span className="console-blink">●</span>
                     </div>
                     <div className="console-output" ref={consoleRef}>
-                        <div className="console-line system">[INIT] ShopScore Auditor v2.0</div>
-                        <div className="console-line system">[INIT] Loading quality checkers...</div>
+                        <div className="console-line system">[INIT] HeroScore Auditor v3.0</div>
+                        <div className="console-line system">[INIT] Loading brand quality checkers...</div>
                         {progress.logs.map((log, index) => (
                             <div key={index} className={`console-line ${log.status}`}>
                                 <span className="console-time">

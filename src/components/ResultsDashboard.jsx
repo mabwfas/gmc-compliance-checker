@@ -109,7 +109,7 @@ function ResultsDashboard({ results }) {
                         </div>
                     </div>
                     <div className="score-info">
-                        <h1>ShopScore v2.0 Audit Report</h1>
+                        <h1>HeroScore v3.0 Audit Report</h1>
                         <p className={`score-status ${getStatusClass(totalScore)}`}>
                             {scoreInfo.icon} {scoreInfo.label}
                         </p>
