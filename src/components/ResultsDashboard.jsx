@@ -6,21 +6,40 @@ function ResultsDashboard({ results }) {
     const [activeTab, setActiveTab] = useState('critical');
     const [copiedCode, setCopiedCode] = useState(null);
 
-    // Get all issues flattened with category info
-    const allIssues = useMemo(() => {
-        const issues = [];
-        results.categories.forEach(cat => {
-            cat.issues.forEach(issue => {
-                issues.push({ ...issue, category: cat.name });
+    // Get ShopScore data from results
+    const shopScoreData = results.shopScoreData || {};
+    const totalScore = shopScoreData.totalScore || results.score || 0;
+    const { status, statusColor, criticalCount, highCount, mediumCount, lowCount, allIssues } = shopScoreData;
+
+    // Get categories from results (array of category objects)
+    const categories = Array.isArray(results) ? results : results.categories || [];
+
+    // Collect all issues with category info
+    const { criticalIssues, warningIssues, passedIssues } = useMemo(() => {
+        const critical = [];
+        const warning = [];
+        const passed = [];
+
+        categories.forEach(cat => {
+            (cat.issues || []).forEach(issue => {
+                const issueWithCat = { ...issue, category: cat.name };
+                if (issue.severity === 'pass') {
+                    passed.push(issueWithCat);
+                } else if (issue.impact === 'critical' || issue.impact === 'high') {
+                    critical.push(issueWithCat);
+                } else {
+                    warning.push(issueWithCat);
+                }
             });
         });
-        return issues;
-    }, [results.categories]);
 
-    // Separate by severity
-    const criticalIssues = allIssues.filter(i => i.severity === 'critical');
-    const warningIssues = allIssues.filter(i => i.severity === 'warning');
-    const passedIssues = allIssues.filter(i => i.severity === 'pass');
+        // Sort by impact
+        const impactOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        critical.sort((a, b) => (impactOrder[a.impact] || 99) - (impactOrder[b.impact] || 99));
+        warning.sort((a, b) => (impactOrder[a.impact] || 99) - (impactOrder[b.impact] || 99));
+
+        return { criticalIssues: critical, warningIssues: warning, passedIssues: passed };
+    }, [categories]);
 
     // Copy code to clipboard
     const copyCode = (code, id) => {
@@ -29,66 +48,100 @@ function ResultsDashboard({ results }) {
         setTimeout(() => setCopiedCode(null), 2000);
     };
 
-    // Get priority score for sorting
-    const getPriorityScore = (issue) => {
-        let score = 0;
-        if (issue.severity === 'critical') score += 100;
-        if (issue.severity === 'warning') score += 50;
-        if (issue.category?.includes('Policy')) score += 30;
-        if (issue.category?.includes('Product')) score += 20;
-        return score;
-    };
-
     // Get status class
     const getStatusClass = (score) => {
-        if (score >= 80) return 'good';
-        if (score >= 50) return 'warning';
+        if (score >= 90) return 'good';
+        if (score >= 80) return 'nearly';
+        if (score >= 60) return 'warning';
         return 'critical';
     };
 
-    // Priority sorted issues
-    const sortedCritical = [...criticalIssues].sort((a, b) => getPriorityScore(b) - getPriorityScore(a));
-    const sortedWarning = [...warningIssues].sort((a, b) => getPriorityScore(b) - getPriorityScore(a));
+    // Get score interpretation
+    const getScoreInterpretation = (score) => {
+        if (score >= 90) return { label: 'Ready for Delivery', desc: 'Minor polish only, can proceed to client', icon: '✅' };
+        if (score >= 80) return { label: 'Nearly Ready', desc: 'Fix high-impact items before delivery', icon: '🟡' };
+        if (score >= 60) return { label: 'Needs Work', desc: 'Multiple issues to address, re-audit required', icon: '🟠' };
+        return { label: 'Not Ready', desc: 'Critical failures, escalate to developer', icon: '🔴' };
+    };
+
+    const scoreInfo = getScoreInterpretation(totalScore);
+
+    // Get impact badge color
+    const getImpactColor = (impact) => {
+        switch (impact) {
+            case 'critical': return '#ef4444';
+            case 'high': return '#f97316';
+            case 'medium': return '#f59e0b';
+            case 'low': return '#6366f1';
+            default: return '#6b7280';
+        }
+    };
 
     return (
-        <div className="results-dashboard-v2">
+        <div className="results-dashboard-v2 shopscore-theme">
             {/* Hero Score Section */}
-            <div className="score-hero">
+            <div className="score-hero shopscore">
                 <div className="score-hero-left">
                     <div className="big-score-ring">
                         <svg viewBox="0 0 120 120">
                             <circle className="ring-bg" cx="60" cy="60" r="54" />
                             <circle
-                                className={`ring-fill ${getStatusClass(results.score)}`}
+                                className={`ring-fill ${getStatusClass(totalScore)}`}
                                 cx="60" cy="60" r="54"
-                                strokeDasharray={`${results.score * 3.39} 339`}
+                                strokeDasharray={`${totalScore * 3.39} 339`}
                             />
                         </svg>
                         <div className="score-center">
-                            <span className="score-value">{results.score}</span>
+                            <span className="score-value">{totalScore}</span>
                             <span className="score-max">/100</span>
                         </div>
                     </div>
                     <div className="score-info">
-                        <h1>GMC Compliance Score</h1>
-                        <p className={`score-status ${getStatusClass(results.score)}`}>
-                            {results.score >= 80 ? '✅ Ready for Merchant Center' :
-                                results.score >= 50 ? '⚠️ Needs Improvement' : '🚨 Not GMC Ready'}
+                        <h1>ShopScore Audit Report</h1>
+                        <p className={`score-status ${getStatusClass(totalScore)}`}>
+                            {scoreInfo.icon} {scoreInfo.label}
                         </p>
+                        <p className="score-desc">{scoreInfo.desc}</p>
                         <div className="scan-meta">
                             {results.platform && (
                                 <span className="meta-chip platform" style={{ background: results.platform.color }}>
                                     {results.platform.icon} {results.platform.name}
                                 </span>
                             )}
-                            <span className="meta-chip">{results.pagesScanned} pages scanned</span>
-                            <span className="meta-chip">{new Date(results.scanDate).toLocaleDateString()}</span>
+                            <span className="meta-chip">{results.pagesScanned || 0} pages scanned</span>
+                            <span className="meta-chip">{new Date(results.scanDate || Date.now()).toLocaleDateString()}</span>
                         </div>
                     </div>
                 </div>
                 <div className="score-hero-right">
                     <ExportButton results={results} />
                 </div>
+            </div>
+
+            {/* Category Score Cards */}
+            <div className="category-scores-grid">
+                {categories.map((cat, idx) => {
+                    const catScore = cat.score || 0;
+                    const catMax = cat.maxPoints || 20;
+                    const catPercent = Math.round((catScore / catMax) * 100);
+                    return (
+                        <div key={idx} className={`category-score-card ${getStatusClass(catPercent)}`}>
+                            <div className="cat-score-header">
+                                <span className="cat-score-name">{cat.name}</span>
+                                <span className="cat-score-value">{catScore}/{catMax}</span>
+                            </div>
+                            <div className="cat-score-bar">
+                                <div
+                                    className="cat-score-fill"
+                                    style={{ width: `${catPercent}%` }}
+                                ></div>
+                            </div>
+                            <div className="cat-score-issues">
+                                {cat.issues?.filter(i => i.severity !== 'pass').length || 0} issues
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Issue Summary Cards */}
@@ -98,8 +151,8 @@ function ResultsDashboard({ results }) {
                     <div className="summary-icon">🚨</div>
                     <div className="summary-content">
                         <div className="summary-count">{criticalIssues.length}</div>
-                        <div className="summary-label">Critical Issues</div>
-                        <div className="summary-desc">Must fix before GMC approval</div>
+                        <div className="summary-label">Critical/High</div>
+                        <div className="summary-desc">Must fix before delivery</div>
                     </div>
                 </div>
                 <div className={`summary-card warning ${activeTab === 'warning' ? 'active' : ''}`}
@@ -107,7 +160,7 @@ function ResultsDashboard({ results }) {
                     <div className="summary-icon">⚠️</div>
                     <div className="summary-content">
                         <div className="summary-count">{warningIssues.length}</div>
-                        <div className="summary-label">Warnings</div>
+                        <div className="summary-label">Medium/Low</div>
                         <div className="summary-desc">Recommended improvements</div>
                     </div>
                 </div>
@@ -116,14 +169,15 @@ function ResultsDashboard({ results }) {
                     <div className="summary-icon">✅</div>
                     <div className="summary-content">
                         <div className="summary-count">{passedIssues.length}</div>
-                        <div className="summary-label">Passed Checks</div>
-                        <div className="summary-desc">Meeting GMC requirements</div>
+                        <div className="summary-label">Passed</div>
+                        <div className="summary-desc">Meeting quality standards</div>
                     </div>
                 </div>
-                <div className="summary-card categories" onClick={() => setActiveTab('categories')}>
+                <div className={`summary-card categories ${activeTab === 'categories' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('categories')}>
                     <div className="summary-icon">📊</div>
                     <div className="summary-content">
-                        <div className="summary-count">{results.categories.length}</div>
+                        <div className="summary-count">{categories.length}</div>
                         <div className="summary-label">Categories</div>
                         <div className="summary-desc">Detailed breakdown</div>
                     </div>
@@ -132,23 +186,28 @@ function ResultsDashboard({ results }) {
 
             {/* Main Content Area */}
             <div className="dashboard-content">
-                {/* Critical Issues Tab */}
+                {/* Critical/High Issues Tab */}
                 {activeTab === 'critical' && (
                     <div className="issues-section">
                         <div className="section-header">
-                            <h2>🚨 Critical Issues ({criticalIssues.length})</h2>
-                            <p>These issues will cause your GMC account to be disapproved. Fix them immediately.</p>
+                            <h2>🚨 Critical & High Priority Issues ({criticalIssues.length})</h2>
+                            <p>These issues must be fixed before client delivery.</p>
                         </div>
                         <div className="issues-list">
-                            {sortedCritical.map((issue, idx) => (
-                                <div key={idx} className={`issue-card critical ${expandedIssue === `c-${idx}` ? 'expanded' : ''}`}>
+                            {criticalIssues.map((issue, idx) => (
+                                <div key={idx} className={`issue-card ${issue.impact || 'critical'} ${expandedIssue === `c-${idx}` ? 'expanded' : ''}`}>
                                     <div className="issue-card-header" onClick={() => setExpandedIssue(expandedIssue === `c-${idx}` ? null : `c-${idx}`)}>
                                         <div className="issue-priority">
-                                            <span className="priority-badge critical">CRITICAL</span>
+                                            <span className="priority-badge" style={{ background: getImpactColor(issue.impact) }}>
+                                                {(issue.impact || 'critical').toUpperCase()}
+                                            </span>
                                             <span className="issue-category">{issue.category}</span>
                                         </div>
                                         <h3 className="issue-title">{issue.title}</h3>
                                         <p className="issue-description">{issue.description}</p>
+                                        {issue.location && (
+                                            <p className="issue-location">📍 {issue.location}</p>
+                                        )}
                                         <div className="issue-actions">
                                             <button className="expand-btn">
                                                 {expandedIssue === `c-${idx}` ? '▲ Hide Fix' : '▼ Show Fix'}
@@ -181,7 +240,7 @@ function ResultsDashboard({ results }) {
                                             {issue.copyPasteCode && (
                                                 <div className="detail-block code">
                                                     <div className="code-header">
-                                                        <h4>📋 Copy-Paste Fix</h4>
+                                                        <h4>📋 Copy-Paste Code</h4>
                                                         <button
                                                             className={`copy-btn ${copiedCode === `c-${idx}` ? 'copied' : ''}`}
                                                             onClick={(e) => { e.stopPropagation(); copyCode(issue.copyPasteCode, `c-${idx}`); }}
@@ -192,14 +251,6 @@ function ResultsDashboard({ results }) {
                                                     <pre><code>{issue.copyPasteCode}</code></pre>
                                                 </div>
                                             )}
-                                            {issue.location && (
-                                                <div className="detail-block location">
-                                                    <h4>📍 Location</h4>
-                                                    <a href={issue.location} target="_blank" rel="noopener noreferrer">
-                                                        {issue.location}
-                                                    </a>
-                                                </div>
-                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -208,26 +259,28 @@ function ResultsDashboard({ results }) {
                                 <div className="empty-state success">
                                     <span className="empty-icon">🎉</span>
                                     <h3>No Critical Issues!</h3>
-                                    <p>Your store has no critical compliance issues.</p>
+                                    <p>No critical or high priority issues found.</p>
                                 </div>
                             )}
                         </div>
                     </div>
                 )}
 
-                {/* Warning Issues Tab */}
+                {/* Medium/Low Issues Tab */}
                 {activeTab === 'warning' && (
                     <div className="issues-section">
                         <div className="section-header">
-                            <h2>⚠️ Warnings ({warningIssues.length})</h2>
-                            <p>These issues may affect your GMC performance. Fixing them is recommended.</p>
+                            <h2>⚠️ Medium & Low Priority Issues ({warningIssues.length})</h2>
+                            <p>Recommended improvements for better quality.</p>
                         </div>
                         <div className="issues-list">
-                            {sortedWarning.map((issue, idx) => (
-                                <div key={idx} className={`issue-card warning ${expandedIssue === `w-${idx}` ? 'expanded' : ''}`}>
+                            {warningIssues.map((issue, idx) => (
+                                <div key={idx} className={`issue-card ${issue.impact || 'medium'} ${expandedIssue === `w-${idx}` ? 'expanded' : ''}`}>
                                     <div className="issue-card-header" onClick={() => setExpandedIssue(expandedIssue === `w-${idx}` ? null : `w-${idx}`)}>
                                         <div className="issue-priority">
-                                            <span className="priority-badge warning">WARNING</span>
+                                            <span className="priority-badge" style={{ background: getImpactColor(issue.impact) }}>
+                                                {(issue.impact || 'medium').toUpperCase()}
+                                            </span>
                                             <span className="issue-category">{issue.category}</span>
                                         </div>
                                         <h3 className="issue-title">{issue.title}</h3>
@@ -264,7 +317,7 @@ function ResultsDashboard({ results }) {
                                             {issue.copyPasteCode && (
                                                 <div className="detail-block code">
                                                     <div className="code-header">
-                                                        <h4>📋 Copy-Paste Fix</h4>
+                                                        <h4>📋 Copy-Paste Code</h4>
                                                         <button
                                                             className={`copy-btn ${copiedCode === `w-${idx}` ? 'copied' : ''}`}
                                                             onClick={(e) => { e.stopPropagation(); copyCode(issue.copyPasteCode, `w-${idx}`); }}
@@ -283,7 +336,7 @@ function ResultsDashboard({ results }) {
                                 <div className="empty-state success">
                                     <span className="empty-icon">✨</span>
                                     <h3>No Warnings!</h3>
-                                    <p>Your store meets all recommended practices.</p>
+                                    <p>All medium and low priority checks passed.</p>
                                 </div>
                             )}
                         </div>
@@ -295,7 +348,7 @@ function ResultsDashboard({ results }) {
                     <div className="issues-section">
                         <div className="section-header">
                             <h2>✅ Passed Checks ({passedIssues.length})</h2>
-                            <p>These compliance checks are already met. Great job!</p>
+                            <p>These items meet quality standards.</p>
                         </div>
                         <div className="passed-grid">
                             {passedIssues.map((issue, idx) => (
@@ -316,45 +369,61 @@ function ResultsDashboard({ results }) {
                     <div className="issues-section">
                         <div className="section-header">
                             <h2>📊 Category Breakdown</h2>
-                            <p>Detailed compliance status by category</p>
+                            <p>Detailed scores and issues by category</p>
                         </div>
                         <div className="category-grid">
-                            {results.categories.map((cat, idx) => {
-                                const catCritical = cat.issues.filter(i => i.severity === 'critical').length;
-                                const catWarning = cat.issues.filter(i => i.severity === 'warning').length;
-                                const catPassed = cat.issues.filter(i => i.severity === 'pass').length;
-                                const total = catCritical + catWarning + catPassed;
-                                const catScore = total > 0 ? Math.round((catPassed / total) * 100) : 100;
+                            {categories.map((cat, idx) => {
+                                const catIssues = cat.issues?.filter(i => i.severity !== 'pass') || [];
+                                const catPassed = cat.issues?.filter(i => i.severity === 'pass') || [];
+                                const catScore = cat.score || 0;
+                                const catMax = cat.maxPoints || 20;
+                                const catPercent = Math.round((catScore / catMax) * 100);
 
                                 return (
-                                    <div key={idx} className={`category-card ${getStatusClass(catScore)}`}>
+                                    <div key={idx} className={`category-card ${getStatusClass(catPercent)}`}>
                                         <div className="category-header">
                                             <h3>{cat.name}</h3>
-                                            <span className={`category-score ${getStatusClass(catScore)}`}>
-                                                {catScore}%
+                                            <span className={`category-score ${getStatusClass(catPercent)}`}>
+                                                {catScore}/{catMax} pts
                                             </span>
                                         </div>
                                         <div className="category-bar">
-                                            <div className="bar-fill" style={{ width: `${catScore}%` }}></div>
+                                            <div className="bar-fill" style={{ width: `${catPercent}%` }}></div>
                                         </div>
                                         <div className="category-stats">
-                                            {catCritical > 0 && (
-                                                <span className="cat-stat critical">{catCritical} Critical</span>
+                                            {catIssues.filter(i => i.impact === 'critical').length > 0 && (
+                                                <span className="cat-stat critical">
+                                                    {catIssues.filter(i => i.impact === 'critical').length} Critical
+                                                </span>
                                             )}
-                                            {catWarning > 0 && (
-                                                <span className="cat-stat warning">{catWarning} Warning</span>
+                                            {catIssues.filter(i => i.impact === 'high').length > 0 && (
+                                                <span className="cat-stat high">
+                                                    {catIssues.filter(i => i.impact === 'high').length} High
+                                                </span>
                                             )}
-                                            {catPassed > 0 && (
-                                                <span className="cat-stat passed">{catPassed} Passed</span>
+                                            {catIssues.filter(i => i.impact === 'medium').length > 0 && (
+                                                <span className="cat-stat medium">
+                                                    {catIssues.filter(i => i.impact === 'medium').length} Medium
+                                                </span>
+                                            )}
+                                            {catPassed.length > 0 && (
+                                                <span className="cat-stat passed">
+                                                    {catPassed.length} Passed
+                                                </span>
                                             )}
                                         </div>
                                         <div className="category-issues">
-                                            {cat.issues.filter(i => i.severity !== 'pass').slice(0, 3).map((issue, i) => (
-                                                <div key={i} className={`mini-issue ${issue.severity}`}>
+                                            {catIssues.slice(0, 3).map((issue, i) => (
+                                                <div key={i} className={`mini-issue ${issue.impact}`}>
                                                     <span className="mini-dot"></span>
                                                     {issue.title}
                                                 </div>
                                             ))}
+                                            {catIssues.length > 3 && (
+                                                <div className="mini-issue more">
+                                                    +{catIssues.length - 3} more issues
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 );

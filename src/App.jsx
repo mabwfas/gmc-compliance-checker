@@ -6,7 +6,7 @@ import { runAllCheckers } from './checkers';
 import { crawlWebsite } from './utils/crawler';
 
 // Local storage key
-const STORAGE_KEY = 'gmc_checker_stores';
+const STORAGE_KEY = 'shopscore_audits';
 
 function App() {
     const [url, setUrl] = useState('');
@@ -85,7 +85,7 @@ function App() {
             if (scanMode === 'sitemap') {
                 addLog(`Parsing sitemap: ${sitemapUrl}`, 'pending');
             } else {
-                addLog(`Starting GMC scan for ${targetUrl}`, 'pending');
+                addLog(`Starting ShopScore audit for ${targetUrl}`, 'pending');
             }
             updateProgress(5, scanMode === 'sitemap' ? 'Parsing sitemap...' : 'Validating URL...');
 
@@ -111,7 +111,7 @@ function App() {
                 addLog(`Found ${crawlResults.totalUrlsInSitemap} URLs in sitemap`, 'success');
             }
             addLog(`Successfully crawled ${crawlResults.pages.length} pages`, 'success');
-            updateProgress(40, 'Running GMC compliance checks...');
+            updateProgress(40, 'Running ShopScore quality checks...');
 
             const checkResults = await runAllCheckers(crawlResults, (checkerName, percent) => {
                 addLog(`Running ${checkerName}...`, 'pending');
@@ -152,28 +152,18 @@ function App() {
             const passedChecks = checkResults.reduce((sum, cat) =>
                 sum + cat.issues.filter(i => i.severity === 'pass').length, 0);
 
-            // Calculate score with minimum of 10 (never show 0)
-            let score = 100;
-            score -= criticalIssues * 15;
-            score -= warningIssues * 5;
-            score = Math.max(10, Math.min(100, score)); // Minimum 10, never 0
-
-            // Extract category-specific scores
-            const categoryScores = {
-                design: checkResults.find(c => c.name === 'Design Quality')?.score || 0,
-                copywriting: checkResults.find(c => c.name === 'Copywriting Quality')?.score || 0,
-                ux: checkResults.find(c => c.name === 'User Experience')?.score || 0,
-                compliance: score
-            };
+            // Use ShopScore data from checkers
+            const shopScoreData = checkResults.shopScoreData || {};
+            const score = shopScoreData.totalScore || checkResults.reduce((sum, cat) => sum + (cat.score || 0), 0);
 
             const newResults = {
                 url: targetUrl,
                 scanDate: new Date().toISOString(),
                 pagesScanned: crawlResults.pages.length,
                 totalUrlsInSitemap: crawlResults.totalUrlsInSitemap,
-                platform, // Store detected platform
+                platform,
                 score,
-                categoryScores, // Store individual category scores
+                shopScoreData, // Store ShopScore specific data
                 totalIssues,
                 criticalIssues,
                 warningIssues,
@@ -238,10 +228,10 @@ function App() {
             <aside className="sidebar">
                 {/* App Branding */}
                 <div className="sidebar-brand">
-                    <div className="brand-icon">🛒</div>
+                    <div className="brand-icon">📊</div>
                     <div className="brand-text">
-                        <h1>GMC Checker</h1>
-                        <p>Google Merchant Center Compliance Scanner</p>
+                        <h1>ShopScore</h1>
+                        <p>Shopify QA Audit Tool</p>
                     </div>
                 </div>
 
@@ -416,20 +406,24 @@ function App() {
 
                                         <div className="features-grid">
                                             <div className="feature-item">
-                                                <span className="feature-icon">📋</span>
-                                                <span className="feature-text">Policy Checks</span>
+                                                <span className="feature-icon">📜</span>
+                                                <span className="feature-text">Essential Pages (25pts)</span>
                                             </div>
                                             <div className="feature-item">
-                                                <span className="feature-icon">🛒</span>
-                                                <span className="feature-text">Checkout Flow</span>
+                                                <span className="feature-icon">🧭</span>
+                                                <span className="feature-text">Navigation (20pts)</span>
                                             </div>
                                             <div className="feature-item">
-                                                <span className="feature-icon">🔒</span>
-                                                <span className="feature-text">Security</span>
+                                                <span className="feature-icon">📝</span>
+                                                <span className="feature-text">Content (20pts)</span>
                                             </div>
                                             <div className="feature-item">
-                                                <span className="feature-icon">📊</span>
-                                                <span className="feature-text">Schema Data</span>
+                                                <span className="feature-icon">🎨</span>
+                                                <span className="feature-text">Visual (20pts)</span>
+                                            </div>
+                                            <div className="feature-item">
+                                                <span className="feature-icon">⚙️</span>
+                                                <span className="feature-text">Technical (15pts)</span>
                                             </div>
                                         </div>
                                     </div>
@@ -440,7 +434,7 @@ function App() {
                 )}
 
                 <footer className="app-footer">
-                    <p>GMC Compliance Checker • Powered by AI Analysis</p>
+                    <p>ShopScore • Shopify QA Audit Tool by Digital Marketing Heroes</p>
                 </footer>
             </main>
         </div>

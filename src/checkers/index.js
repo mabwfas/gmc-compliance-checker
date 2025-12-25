@@ -1,71 +1,48 @@
-// Main Checkers Index
-// Exports all checkers and orchestrates the checking process
+// ShopScore Checkers Index
+// Unified 5-category Shopify QA audit system
 
-import { checkPolicies } from './policiesChecker';
-import { checkProductPages } from './productChecker';
-import { checkTechnicalRequirements } from './technicalChecker';
-import { checkCheckoutExperience } from './checkoutChecker';
-import { checkContentQuality } from './contentChecker';
-import { checkImageQuality } from './imageChecker';
-import { checkStructuredData } from './structuredDataChecker';
-import { checkSecurity } from './securityChecker';
-import { checkMicroDetails } from './microChecker';
-import { checkDesignQuality } from './designChecker';
-import { checkCopywritingQuality } from './copywritingChecker';
-import { checkUserExperience } from './uxChecker';
+import { runShopScoreAudit, checkEssentialPages, checkNavigation, checkContentQuality, checkVisualDesign, checkTechnicalMarkers } from './shopScoreChecker';
 
-// List of all checkers with their display info - 12 comprehensive checks
-const checkers = [
-    { name: 'Required Policies', fn: checkPolicies },
-    { name: 'Product Pages', fn: checkProductPages },
-    { name: 'Technical Requirements', fn: checkTechnicalRequirements },
-    { name: 'Checkout Experience', fn: checkCheckoutExperience },
-    { name: 'Content Quality', fn: checkContentQuality },
-    { name: 'Image Quality', fn: checkImageQuality },
-    { name: 'Structured Data', fn: checkStructuredData },
-    { name: 'Security', fn: checkSecurity },
-    { name: 'Micro Details', fn: checkMicroDetails },
-    { name: 'Design Quality', fn: checkDesignQuality },
-    { name: 'Copywriting', fn: checkCopywritingQuality },
-    { name: 'User Experience', fn: checkUserExperience }
+// List of all ShopScore categories
+const shopScoreCategories = [
+    { name: 'Essential Pages & Policies', fn: checkEssentialPages, maxPoints: 25 },
+    { name: 'Navigation & Structure', fn: checkNavigation, maxPoints: 20 },
+    { name: 'Content Quality', fn: checkContentQuality, maxPoints: 20 },
+    { name: 'Visual & Design', fn: checkVisualDesign, maxPoints: 20 },
+    { name: 'Technical Markers', fn: checkTechnicalMarkers, maxPoints: 15 }
 ];
 
 export async function runAllCheckers(crawlResults, onProgress) {
     const results = [];
-    const categoryScores = {};
 
-    for (let i = 0; i < checkers.length; i++) {
-        const checker = checkers[i];
+    for (let i = 0; i < shopScoreCategories.length; i++) {
+        const category = shopScoreCategories[i];
 
         // Report progress
         if (onProgress) {
-            onProgress(checker.name, (i / checkers.length) * 100);
+            onProgress(category.name, (i / shopScoreCategories.length) * 100);
         }
 
         try {
-            // Run the checker
-            const result = checker.fn(crawlResults);
+            // Run the category check
+            const result = category.fn(crawlResults);
             results.push(result);
-
-            // Store category scores for Design, Copywriting, UX
-            if (result.score !== undefined) {
-                categoryScores[checker.name] = result.score;
-            }
         } catch (error) {
-            console.error(`Error in ${checker.name}:`, error);
+            console.error(`Error in ${category.name}:`, error);
             results.push({
-                name: checker.name,
-                description: 'An error occurred while running this check',
+                name: category.name,
+                maxPoints: category.maxPoints,
+                score: 0,
                 issues: [{
                     title: 'Check Failed',
                     severity: 'warning',
-                    description: `Could not complete ${checker.name} check: ${error.message}`
+                    description: `Could not complete ${category.name} check: ${error.message}`
                 }]
             });
         }
 
         // Small delay for UI feedback
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 150));
     }
 
     // Final progress report
@@ -73,23 +50,60 @@ export async function runAllCheckers(crawlResults, onProgress) {
         onProgress('Complete', 100);
     }
 
-    // Add category scores to results
-    results.categoryScores = categoryScores;
+    // Calculate overall score and status
+    const totalScore = results.reduce((sum, cat) => sum + (cat.score || 0), 0);
+
+    // Determine status
+    let status, statusColor;
+    if (totalScore >= 90) {
+        status = 'Ready for Delivery';
+        statusColor = 'success';
+    } else if (totalScore >= 80) {
+        status = 'Nearly Ready';
+        statusColor = 'warning';
+    } else if (totalScore >= 60) {
+        status = 'Needs Work';
+        statusColor = 'warning';
+    } else {
+        status = 'Not Ready';
+        statusColor = 'critical';
+    }
+
+    // Collect all issues
+    const allIssues = [];
+    const impactOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+
+    results.forEach(cat => {
+        cat.issues.forEach(issue => {
+            if (issue.severity !== 'pass') {
+                allIssues.push({ ...issue, category: cat.name });
+            }
+        });
+    });
+
+    allIssues.sort((a, b) => (impactOrder[a.impact] || 99) - (impactOrder[b.impact] || 99));
+
+    // Add metadata to results
+    results.shopScoreData = {
+        totalScore,
+        maxScore: 100,
+        status,
+        statusColor,
+        criticalCount: allIssues.filter(i => i.impact === 'critical').length,
+        highCount: allIssues.filter(i => i.impact === 'high').length,
+        mediumCount: allIssues.filter(i => i.impact === 'medium').length,
+        lowCount: allIssues.filter(i => i.impact === 'low').length,
+        allIssues
+    };
 
     return results;
 }
 
 export {
-    checkPolicies,
-    checkProductPages,
-    checkTechnicalRequirements,
-    checkCheckoutExperience,
+    runShopScoreAudit,
+    checkEssentialPages,
+    checkNavigation,
     checkContentQuality,
-    checkImageQuality,
-    checkStructuredData,
-    checkSecurity,
-    checkMicroDetails,
-    checkDesignQuality,
-    checkCopywritingQuality,
-    checkUserExperience
+    checkVisualDesign,
+    checkTechnicalMarkers
 };
