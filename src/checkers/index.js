@@ -77,8 +77,9 @@ export async function runAllCheckers(crawlResults, onProgress) {
         onProgress('Complete', 100);
     }
 
-    // Calculate overall score
-    const totalScore = results.reduce((sum, cat) => sum + (cat.score || 0), 0);
+    // Calculate overall score (capped at 100)
+    const rawScore = results.reduce((sum, cat) => sum + (cat.score || 0), 0);
+    const totalScore = Math.min(rawScore, 100);
 
     // Calculate group scores
     const coreScore = results.filter(r => r.group === 'core').reduce((sum, cat) => sum + (cat.score || 0), 0);
