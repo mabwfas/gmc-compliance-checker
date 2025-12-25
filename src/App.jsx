@@ -121,24 +121,71 @@ function App() {
             addLog('All checks completed!', 'success');
             updateProgress(100, 'Scan complete!');
 
-            // Detect platform from crawled pages
+            // Detect platform from crawled pages - order matters (specific before generic)
             const detectPlatform = (pages) => {
                 const allHtml = pages.map(p => p.html || '').join(' ').toLowerCase();
-                if (allHtml.includes('shopify') || allHtml.includes('cdn.shopify.com')) {
-                    return { name: 'Shopify', icon: '🛍️', color: '#96bf48' };
-                }
-                if (allHtml.includes('woocommerce') || allHtml.includes('wc-') || allHtml.includes('wp-content/plugins/woocommerce')) {
+
+                // WooCommerce (check before WordPress since WC runs on WP)
+                if (allHtml.includes('woocommerce') ||
+                    allHtml.includes('wc-add-to-cart') ||
+                    allHtml.includes('wp-content/plugins/woocommerce') ||
+                    allHtml.includes('wc-block')) {
                     return { name: 'WooCommerce', icon: '🔮', color: '#7f54b3' };
                 }
-                if (allHtml.includes('wordpress') || allHtml.includes('wp-content') || allHtml.includes('wp-includes')) {
-                    return { name: 'WordPress', icon: '📝', color: '#21759b' };
+
+                // Shopify - specific patterns (avoid false positives)
+                if (allHtml.includes('cdn.shopify.com') ||
+                    allHtml.includes('myshopify.com') ||
+                    allHtml.includes('shopify-section') ||
+                    allHtml.includes('shopify_analytics') ||
+                    allHtml.includes('"shopify"') ||
+                    /shopify\.com\/s\/files/.test(allHtml)) {
+                    return { name: 'Shopify', icon: '🛍️', color: '#96bf48' };
                 }
-                if (allHtml.includes('magento') || allHtml.includes('mage')) {
-                    return { name: 'Magento', icon: '🔶', color: '#f46f25' };
-                }
-                if (allHtml.includes('bigcommerce')) {
+
+                // BigCommerce
+                if (allHtml.includes('bigcommerce') ||
+                    allHtml.includes('cdn11.bigcommerce') ||
+                    allHtml.includes('data-bc-')) {
                     return { name: 'BigCommerce', icon: '🛒', color: '#34313f' };
                 }
+
+                // Magento
+                if (allHtml.includes('mage-init') ||
+                    allHtml.includes('magento') ||
+                    allHtml.includes('requirejs-config') && allHtml.includes('mage')) {
+                    return { name: 'Magento', icon: '🔶', color: '#f46f25' };
+                }
+
+                // Squarespace
+                if (allHtml.includes('squarespace') ||
+                    allHtml.includes('static1.squarespace') ||
+                    allHtml.includes('sqs-block')) {
+                    return { name: 'Squarespace', icon: '⬛', color: '#000000' };
+                }
+
+                // Wix
+                if (allHtml.includes('wix.com') ||
+                    allHtml.includes('static.wixstatic') ||
+                    allHtml.includes('_wix_browser')) {
+                    return { name: 'Wix', icon: '🟡', color: '#faad4d' };
+                }
+
+                // PrestaShop
+                if (allHtml.includes('prestashop') ||
+                    allHtml.includes('presta') && allHtml.includes('addons')) {
+                    return { name: 'PrestaShop', icon: '🟣', color: '#df0067' };
+                }
+
+                // WordPress (generic - check after WooCommerce)
+                if (allHtml.includes('wp-content') ||
+                    allHtml.includes('wp-includes') ||
+                    allHtml.includes('wordpress') ||
+                    allHtml.includes('elementor') ||
+                    allHtml.includes('wp-json')) {
+                    return { name: 'WordPress', icon: '📝', color: '#21759b' };
+                }
+
                 return { name: 'Custom/Unknown', icon: '🌐', color: '#6366f1' };
             };
 
@@ -407,23 +454,27 @@ function App() {
                                         <div className="features-grid">
                                             <div className="feature-item">
                                                 <span className="feature-icon">📜</span>
-                                                <span className="feature-text">Essential Pages (25pts)</span>
+                                                <span className="feature-text">Essential Pages (20pts)</span>
                                             </div>
                                             <div className="feature-item">
                                                 <span className="feature-icon">🧭</span>
-                                                <span className="feature-text">Navigation (20pts)</span>
+                                                <span className="feature-text">Navigation (15pts)</span>
                                             </div>
                                             <div className="feature-item">
                                                 <span className="feature-icon">📝</span>
-                                                <span className="feature-text">Content (20pts)</span>
+                                                <span className="feature-text">Content (15pts)</span>
                                             </div>
                                             <div className="feature-item">
                                                 <span className="feature-icon">🎨</span>
-                                                <span className="feature-text">Visual (20pts)</span>
+                                                <span className="feature-text">Visual (15pts)</span>
                                             </div>
                                             <div className="feature-item">
                                                 <span className="feature-icon">⚙️</span>
-                                                <span className="feature-text">Technical (15pts)</span>
+                                                <span className="feature-text">Technical (10pts)</span>
+                                            </div>
+                                            <div className="feature-item">
+                                                <span className="feature-icon">🛒</span>
+                                                <span className="feature-text">GMC Compliance (25pts)</span>
                                             </div>
                                         </div>
                                     </div>
