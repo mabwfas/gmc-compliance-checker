@@ -9,7 +9,7 @@ import { crawlWebsite } from './utils/crawler';
 const STORAGE_KEY = 'shopscore_audits';
 
 function App() {
-    const [url, setUrl] = useState('');
+    const [url, setUrl] = useState('bullringx.com');
     const [sitemapUrl, setSitemapUrl] = useState('');
     const [useSitemap, setUseSitemap] = useState(false);
     const [maxPages, setMaxPages] = useState(50);
